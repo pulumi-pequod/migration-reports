@@ -1,159 +1,141 @@
-# Pulumi Migration Report — `pequod`
-
-> **Generated:** June 29, 2026  
-> **Source:** Pulumi Insights (5 enrolled accounts) + Pulumi Cloud API  
-> **Scope:** All discovered cloud resources across enrolled Insights accounts.  
-> **Action taken:** None — this report only observes and recommends.
+# Pulumi Insights Migration Report
+**Organization:** `pequod` · **Generated:** 2026-06-29 · **Data freshness:** Jun 28–29, 2026 (except workshops, see §4)
 
 ---
 
 ## 1. Executive Summary
 
-**Org-wide migration coverage (Insights-discovered resources)**
+**Org-wide migration rate:**
+░░░░░░░░░░░░░░░░░░░░ 1%
 
-```
-░░░░░░░░░░░░░░░░░░░░ 0.9%  (53 of 5,946 discovered resources already under Pulumi IaC)
-```
+**5,946** total resources discovered across 5 Insights-enrolled accounts. **53** confirmed under Pulumi management. The `pequod` org is the Pulumi CE (Customer Engineering) team's shared demo and workshop estate — prolific IaC activity (543 stacks, 3,987 managed resources across all projects) but a large unmanaged tail in the enrolled cloud accounts. **The single biggest action item is deleting 1,064 orphaned `serverless-comp-*` IAM policies** that alone represent 18% of all discovered resources.
 
-**Context:** `pequod` is the Pulumi CE (Customer Engineering) team's shared demo and workshop organization. The estate is dominated by hundreds of ad-hoc demo deployments with minimal IaC tracking of discovered resources. Separately, the org maintains **21 active stacks managing ~297 IaC resources** across 19 projects — primarily shared EKS/AKS clusters, demo apps, and OIDC/ESC configuration — but most of those IaC resources live in accounts or resource types not enrolled in Insights, explaining the apparent gap.
+| Bucket | Count | % All Discovered | % Migratable |
+|--------|------:|-----------------:|-------------:|
+| ✅ Migrated (Pulumi-managed) | 53 | 0.9% | 1.1% |
+| 🔒 Will remain unmanaged | ~1,253 | 21.1% | — |
+| 🗑️ Should be deleted | ~1,300 | 21.9% | — |
+| 🚧 Needs migration | ~3,340 | 56.2% | ~97.0% |
+| **Total discovered** | **5,946** | | |
 
-| Bucket | Count | % of Discovered | % of Migratable Base |
-|--------|------:|----------------:|--------------------:|
-| ✅ Migrated (in Pulumi IaC stack) | 53 | 0.9% | 1.1% |
-| 🔒 Will remain unmanaged | 1,043 | 17.5% | — |
-| 🗑️ Should be deleted | 970 | 16.3% | 19.8% |
-| ⚠️ Needs migration | 3,880 | 65.3% | 79.1% |
-| **Total discovered** | **5,946** | 100% | — |
+_Migratable base = 5,946 − 1,253 (will-remain) = 4,693._
 
-*Migratable base = 4,903 (total − will-remain-unmanaged). Buckets sum to account totals; accounts sum to 5,946.*  
-*Plus 211 Pulumi IaC resources in stacks not enrolled in Insights (Kubernetes, non-cloud-scanned types).*
-
-**Single biggest takeaway:** ~700 orphaned `serverless-comp-NNN-consumer-*` IAM policies in the main CE account are the dominant noise source; cleaning those alone reduces "needs attention" resources by ~18%.
-
-**Data-quality caveats:** 13 of 38 sub-regions in `aws-pulumi-ce-052848974346` failed to scan (counts unknown, likely near-zero). `aws-pulumi-ce-workshops-420942475186` last scanned **May 2025** — data is 13+ months stale. No formal Pulumi Teams are configured; ownership is attributed by naming convention (mapping stated in §6).
+> **Data-quality caveat:** 13 AWS regions in `aws-pulumi-ce-052848974346` had failed scans (af-south-1, ap-east-1, ap-south-2, ap-southeast-3, ap-southeast-5, ca-west-1, cn-north-1, cn-northwest-1, eu-central-2, eu-south-1, eu-south-2, me-central-1, me-south-1 — expected near-zero impact). `aws-pulumi-ce-workshops-420942475186` last scanned May 2025 — data is 13 months stale. Numbers for `aws-pulumi-ce-052848974346` are partly extrapolated from a 500-resource sample; `serverless-comp` and snapshot counts are exact from targeted queries. No resource tags were available for ownership attribution; naming convention mapping is used as proxy.
 
 ---
 
 ## 2. Migration Progress
 
-### Org-wide four-bucket split (% of 5,946 discovered)
+### Org-wide four-bucket split
 
-| Bucket | Bar | % |
-|--------|-----|--:|
-| Migrated | `░░░░░░░░░░░░░░░░░░░░` | 0.9% |
-| Will remain unmanaged | `███░░░░░░░░░░░░░░░░░` | 17.5% |
-| Should delete | `███░░░░░░░░░░░░░░░░░` | 16.3% |
-| Needs migration | `█████████████░░░░░░░` | 65.3% |
+```
+✅ Migrated          ░░░░░░░░░░░░░░░░░░░░  1%   (53 resources)
+🔒 Will remain       ████░░░░░░░░░░░░░░░░ 21%   (~1,253 resources)
+🗑️ Should delete     ████░░░░░░░░░░░░░░░░ 22%   (~1,300 resources)
+🚧 Needs migration   ███████████░░░░░░░░░ 56%   (~3,340 resources)
+```
 
 ```mermaid
 pie title Discovered Resources by Bucket (5,946 total)
-    "Migrated" : 53
-    "Will Remain Unmanaged" : 1043
-    "Should Delete" : 970
-    "Needs Migration" : 3880
+    "Migrated (Pulumi)" : 53
+    "Will remain unmanaged" : 1253
+    "Should be deleted" : 1300
+    "Needs migration" : 3340
 ```
 
-### % Migrated by Account (of that account's discovered resources)
+### % Migrated by account
 
-| Account | Bar | Migrated / Total |
-|---------|-----|----------------:|
-| aws-neo-eu-west-2-420942475186 | `░░░░░░░░░░░░░░░░░░░░` | 0 / 133 — 0.0% |
-| aws-pulumi-ce-052848974346 | `░░░░░░░░░░░░░░░░░░░░` | 43 / 4,651 — 0.9% |
-| aws-pulumi-ce-workshops-420942475186 ⚠️ | `░░░░░░░░░░░░░░░░░░░░` | 2 / 230 — 0.9% |
-| azure-team-ce-subscription | `░░░░░░░░░░░░░░░░░░░░` | 5 / 328 — 1.5% |
-| google-pulum-ce-team-438338752289 | `░░░░░░░░░░░░░░░░░░░░` | 3 / 604 — 0.5% |
+Migration % is uniformly low — this is a demo estate where cloud resources are created rapidly and rarely formalized into IaC.
 
-*All accounts <2.5% — bars render near-zero deliberately; migration of Insights-visible resources has not yet begun in earnest across this CE estate.*
+```
+aws-neo-eu-west-2-420942475186       ░░░░░░░░░░░░░░░░░░░░  0%  (0/133)
+aws-pulumi-ce-052848974346           ░░░░░░░░░░░░░░░░░░░░  1%  (43/4,651)
+aws-pulumi-ce-workshops-420942475186 ░░░░░░░░░░░░░░░░░░░░  1%  (2/230) ⚠️ stale
+azure-team-ce-subscription           ░░░░░░░░░░░░░░░░░░░░  2%  (5/328)
+google-pulum-ce-team-438338752289    ░░░░░░░░░░░░░░░░░░░░  1%  (3/604)
+```
 
-### % Migrated by Team (of "needs migration" in that team's scope)
+### % Migrated by responsible owner
 
-*Ownership signal: account ownership (primary) → resource name prefix (secondary). See §6 for mapping.*
+_Ownership signal used: account owner (primary), resource-name prefix mapped to CE team member (secondary). Team mapping detailed in §6._
 
-| Team / Owner | Needs Migration | Migrated | Bar |
-|-------------|----------------:|---------:|-----|
-| MitchGerdisch (aws-ce-052848974346 + workshops) | ~3,296 | 45 — 1.4% | `░░░░░░░░░░░░░░░░░░░░` |
-| Azure CE (azure-team-ce-subscription) | ~208 | 5 — 2.4% | `░░░░░░░░░░░░░░░░░░░░` |
-| GCP CE (google-pulum-ce-team-438338752289) | ~324 | 3 — 0.9% | `░░░░░░░░░░░░░░░░░░░░` |
-| Robert Smith (aws-neo-eu-west-2-420942475186) | ~52 | 0 — 0.0% | `░░░░░░░░░░░░░░░░░░░░` |
+```
+Mitch Gerdisch (MitchGerdisch)       ░░░░░░░░░░░░░░░░░░░░  1%  (~48/~5,100 attributable)
+Robert Smith (rsmith-pulumi-corp)    ░░░░░░░░░░░░░░░░░░░░  0%  (0/133)
+CE individuals (menfin, wladi, pk…)  ░░░░░░░░░░░░░░░░░░░░ ~1%  (~5/~550 attributable)
+```
 
 ---
 
 ## 3. Momentum
 
-**Active Pulumi footprint (pequod org):** 21 stacks · 19 projects · ~297 IaC-managed resources · 15 stacks with active resources
+| Metric | Value |
+|--------|-------|
+| Active stacks | 543 |
+| Unique projects | 462 |
+| Total resources under Pulumi IaC | 3,987 |
+| Stacks with activity in last 30 days | 36 |
 
-*Bars below = stacks active (last updated) per month, scaled to Jun 2026 peak (12). Note: API exposes `lastUpdate`, not creation date — these reflect activity, not new-stack counts. Prior to 2025 the org shows no stack activity in the data, consistent with a recently bootstrapped environment.*
+**Stacks last updated, by month** _(last-deploy timestamp; stack creation timestamps not available from API)_
 
 ```
-Jun 2026 ████████████████████ 12  ← busiest month on record
-Mar 2026 ████░░░░░░░░░░░░░░░░  2
-Apr 2026 ██░░░░░░░░░░░░░░░░░░  1
-May 2026 ██░░░░░░░░░░░░░░░░░░  1
-May 2025 ████░░░░░░░░░░░░░░░░  2
-Feb 2025 ██░░░░░░░░░░░░░░░░░░  1
-Jan 2025 ██░░░░░░░░░░░░░░░░░░  1
+Jun 2026 ████████████████████ 36  ← partial month; tracking to be busiest on record
+May 2026 █████████████████░░░ 30
+Apr 2026 ██████████████░░░░░░ 25
+Mar 2026 ████████████████░░░░ 28
+Feb 2026 █████████░░░░░░░░░░░ 16
+Jan 2026 ████████░░░░░░░░░░░░ 15
+Dec 2025 ███░░░░░░░░░░░░░░░░░  5  ← holiday dip
+Nov 2025 ████████████████░░░░ 28
+Oct 2025 █████████████░░░░░░░ 24
+Sep 2025 █████░░░░░░░░░░░░░░░  9
+Aug 2025 ████████████░░░░░░░░ 22
+Jul 2025 ██████████░░░░░░░░░░ 18
+Jun 2025 ███████░░░░░░░░░░░░░ 13
+May 2025 ███████████░░░░░░░░░ 19
 ```
+_(Bars scaled to 36, Jun 2026 max)_
 
-**Activity pattern:** Jun 2026 dominates heavily (12 of 21 stacks updated this month), driven by new demo deployments. Outside of Jun 2026 the org sees only 1–2 stack updates per month — consistent with a small CE org where most work is ephemeral demo creation rather than sustained operations.
-
-**Largest projects by IaC resources (pequod org):**
-
-| Project | Stack | IaC Resources | Last Updated |
-|---------|-------|--------------|-------------|
-| shared-dev-eks | dev | 88 | Feb 2026 |
-| pequod-user-mgmt | prod | 55 | May 2026 |
-| demo-aws-container-services-py-0629 | dev | 38 | Jun 2026 |
-| demo-app | dev | 30 | Jun 2026 |
-| shared-dev-aks | dev | 17 | Feb 2026 |
-| lotctl-k8s-aws | pr | 16 | Jun 2026 |
-| azure-oidc-env-config | prod | 12 | May 2025 |
-| insights-azure-creds | prod | 9 | Feb 2025 |
-| gcp-oidc-env-config | prod | 9 | May 2025 |
-
-Share of footprint active in the last 12 months: **71%** of stacks (15 of 21) have resources and have been updated at least once.
+**Takeaways:**
+- Healthy pulse: H2 2025 and H1 2026 average ~24 stacks touched per month (excluding Dec dip).
+- The org is in a **demo-creation pattern**, not a migration pattern. The 3,987 IaC-managed resources (top projects: `dmvhm-infrastructure` 1,282; `testEksLgAds` 453; `shared-dev-eks` 88) represent new infrastructure built with Pulumi — not yet reconciled against the 5,946 Insights-discovered resources.
+- `aws-pulumi-ce-workshops-420942475186` has no scheduled scanning and no Pulumi activity in 13+ months; a fresh scan is overdue.
 
 ---
 
 ## 4. Coverage by Enrolled Account
 
-> **Important:** Insights coverage reflects only enrolled accounts. The 297 IaC resources in pequod stacks largely live in accounts or resource types not enrolled in Insights (shared EKS/AKS clusters, OIDC config, ESC infra), explaining why only 53 are visible as managed in Insights scans.
+> **Important:** Insights enrollment covers only these 5 accounts. Additional cloud accounts outside this list are invisible to this report; the true unmanaged footprint may be larger.
 
-| Account | Cloud | Pulumi-Managed | Total Discovered | Coverage % | Bar | Last Scan |
-|---------|-------|---------------:|-----------------:|------------|-----|-----------|
-| aws-neo-eu-west-2-420942475186 | AWS | 0 | 133 | 0.0% | `░░░░░░░░░░░░░░░░░░░░` | Jun 29, 2026 |
-| aws-pulumi-ce-052848974346 | AWS | 43 | 4,651 | 0.9% | `░░░░░░░░░░░░░░░░░░░░` | Jun 28, 2026 |
-| aws-pulumi-ce-workshops-420942475186 | AWS | 2 | 230 | 0.9% | `░░░░░░░░░░░░░░░░░░░░` | **May 28, 2025 ⚠️** |
-| azure-team-ce-subscription | Azure | 5 | 328 | 1.5% | `░░░░░░░░░░░░░░░░░░░░` | Jun 29, 2026 |
-| google-pulum-ce-team-438338752289 | GCP | 3 | 604 | 0.5% | `░░░░░░░░░░░░░░░░░░░░` | Jun 29, 2026 |
-| **Org Total** | — | **53** | **5,946** | **0.9%** | `░░░░░░░░░░░░░░░░░░░░` | — |
+| Account | Cloud | Managed | Total Discovered | Coverage % | Last Scan | Notes |
+|---------|-------|--------:|-----------------:|:----------:|-----------|-------|
+| aws-neo-eu-west-2-420942475186 | AWS | 0 | 133 | ░░░░░░░░░░░░░░░░░░░░ 0% | 2026-06-29 | Workshop sandbox; owned by R. Smith |
+| aws-pulumi-ce-052848974346 | AWS | 43 | 4,651 | ░░░░░░░░░░░░░░░░░░░░ 1% | 2026-06-28 | ⚠️ 13 regions failed scan |
+| aws-pulumi-ce-workshops-420942475186 | AWS | 2 | 230 | ░░░░░░░░░░░░░░░░░░░░ 1% | **2025-05-28** | ⚠️ 13 months stale; scheduled scan disabled |
+| azure-team-ce-subscription | Azure | 5 | 328 | ░░░░░░░░░░░░░░░░░░░░ 2% | 2026-06-29 | |
+| google-pulum-ce-team-438338752289 | GCP | 3 | 604 | ░░░░░░░░░░░░░░░░░░░░ 1% | 2026-06-29 | Note: account name has typo (`pulum`) |
 
-**⚠️ Stale scan:** `aws-pulumi-ce-workshops-420942475186` has not been scanned in 13+ months. Trigger a fresh scan before acting on its resource data.
-
-**Enrollment gaps:** Enrolling the AWS account(s) backing `shared-dev-eks` (88 IaC resources) and the Azure account backing `shared-dev-aks` (17 IaC resources) would close most of the gap between the 297 stack-managed resources and the 53 currently visible in Insights.
+**Enrollment gaps:** Any additional AWS accounts used by CE members for customer demos, personal GCP projects, or other Azure subscriptions would add unmanaged resources not visible here. Re-enabling scheduled scanning for `aws-pulumi-ce-workshops-420942475186` is the highest-value immediate action for data completeness.
 
 ---
 
 ## 5. Data Analysis
 
-| Account | Cloud | Total | Migrated | Will Remain Unmanaged | Should Delete | Needs Migration | % Mig (All) | % Mig (Migratable) |
-|---------|-------|------:|---------:|----------------------:|--------------:|----------------:|------------:|-------------------:|
-| aws-neo-eu-west-2-420942475186 | AWS | 133 | 0 | 73 | 8 | 52 | 0.0% | 0.0% |
-| aws-pulumi-ce-052848974346 | AWS | 4,651 | 43 | 600 | 800 | 3,208 | 0.9% | 1.1% |
-| aws-pulumi-ce-workshops-420942475186 ⚠️ | AWS | 230 | 2 | 110 | 30 | 88 | 0.9% | 1.7% |
-| azure-team-ce-subscription | Azure | 328 | 5 | 35 | 80 | 208 | 1.5% | 1.7% |
-| google-pulum-ce-team-438338752289 | GCP | 604 | 3 | 225 | 52 | 324 | 0.5% | 0.8% |
-| **Org Total** | — | **5,946** | **53** | **1,043** | **970** | **3,880** | **0.9%** | **1.1%** |
+> `aws-pulumi-ce-052848974346` will-remain and needs-migration are extrapolated from a 500-resource sample; should-delete counts (`serverless-comp`: 1,064 exact; snapshots: 176 exact; CFN stacks: 36 exact) are from targeted queries. All other accounts fully scanned.
 
-**Classification methodology:**  
-- *Will remain unmanaged:* AWS Service Linked Roles (path `/aws-service-role/`) + their policy attachments; CloudFront `Managed-*` cache/origin/response policies; default VPCs, subnets, SGs, IGWs, route tables; IoT `iot:*` system domain configs; default EventBus, Athena `primary` workgroup, MemoryDB default user/ACL, ElastiCache default user; GCP project service APIs; GCP/Azure default subnetworks and auto-created AKS node RGs (`MC_*`), NetworkWatchers, DefaultResourceGroups, Cloud Shell storage.  
-- *Should delete:* resources judged orphaned or explicitly test-named (detailed in §6).  
-- *Needs migration:* all remaining active cloud infrastructure not yet in Pulumi IaC.  
-- *Classification confidence:* HIGH for "will remain unmanaged" (deterministic patterns); MEDIUM for "should delete" (naming heuristics — human review required before acting).
+| Account | Cloud | Total | ✅ Migrated | 🔒 Will Remain | 🗑️ Delete | 🚧 Needs Migration | % Migrated |
+|---------|-------|------:|----------:|---------------:|----------:|-------------------:|----------:|
+| aws-neo-eu-west-2-420942475186 | AWS | 133 | 0 | 99 | 5 | 29 | 0% |
+| aws-pulumi-ce-052848974346 | AWS | 4,651 | 43 | ~800 | ~1,280 | ~2,528 | 1% |
+| aws-pulumi-ce-workshops-420942475186 | AWS | 230 | 2 | 150 | 9 | 69 | 1% |
+| azure-team-ce-subscription | Azure | 328 | 5 | 26 | 5 | 292 | 2% |
+| google-pulum-ce-team-438338752289 | GCP | 604 | 3 | 178 | 1 | 422 | 1% |
+| **TOTAL** | | **5,946** | **53** | **~1,253** | **~1,300** | **~3,340** | **1%** |
 
 **Three noteworthy specifics:**
-- **`aws-pulumi-ce-052848974346`** holds 78% of total discovered resources and contains >700 orphaned `serverless-comp-NNN-consumer-*` IAM policies — the single largest cleanup target in the org.
-- **13 AWS regions failed to scan** in `aws-pulumi-ce-052848974346`: af-south-1, ap-east-1, ap-south-2, ap-southeast-3, ap-southeast-5, ca-west-1, cn-north-1, cn-northwest-1, eu-central-2, eu-south-1, eu-south-2, me-central-1, me-south-1 — resource counts in those regions are unknown (expected to be near-zero defaults only).
-- **GCP account name is misspelled** (`google-pulum-ce-team` — missing an `i`); worth correcting in account registration for clarity.
+- **1,064 orphaned `serverless-comp-NNN-consumer-*` IAM policies** in `aws-pulumi-ce-052848974346/global` are the dominant noise source — sequential numbered artifacts from an old serverless component demo series, never cleaned up. Deleting these alone cuts the "needs attention" count by 22%.
+- **`aws-pulumi-ce-052848974346/global` holds 1,689 resources** — the single heaviest sub-account — but most are AWS platform scaffolding (service-linked roles, CloudFront managed policies) or the serverless-comp orphans; the true active-workload migration queue is materially smaller than the raw numbers suggest.
+- **GCP offers the richest single-account migration opportunity** outside the primary AWS account: 422 needs-migration resources including 90 custom subnetworks, 33 GCS buckets, 13 Workload Identity Pools, 11 backend services, and 11 DNS record sets — all active demo infrastructure.
 
 ---
 
@@ -161,101 +143,94 @@ Share of footprint active in the last 12 months: **71%** of stacks (15 of 21) ha
 
 ### Migration Queue by Team
 
-**Ownership mapping used:**  
-(1) Resource tag `Owner` or `team` where present (e.g., `Owner=workshops`) →  
-(2) Resource name prefix → team mapping: `mitch-*`, `mitchselfhosted-*` → MitchGerdisch; `workshop*` → Workshop Team; `piers-*` → Piers Karsenbarg; `pk-*` → PK (individual CE); `zbuchheit-*` → Z. Buchheit; `jconnell-*` → J. Connell; `wladi-*`/`rg-dbw-my-team-wladi-*` → Wladi; `rg-dbw-*` → Databricks CE subteam; `aureq-*`, `menfin-*` → individual CEs →  
-(3) Account owner as fallback for all remaining resources.
+**Ownership mapping assumptions** (resource-name prefix → CE team member, validated against account owners from `ListAccounts` API):
+
+| Prefix pattern | Mapped to |
+|---------------|-----------|
+| `menfin-*`, `pulumi-*menfin*` | menfin |
+| `vnet-dbw-*`, `rg-dbw-*`, `nsg-dbw-*` | wladi (Databricks specialist) |
+| `pk-*`, `piers-*` | pk / Piers |
+| `pulumi-esc-ediri*` | ediri |
+| `zbuchheit*` | zbuchheit |
+| `mtan*`, `pulumi-oidc-mtan*` | mtan |
+| `shared-*`, `workshop*`, account-level resources | Mitch Gerdisch (account owner) |
+| Everything else | Mitch Gerdisch (fallback: account owner) |
 
 ---
 
-**MitchGerdisch** (~3,296 resources needing migration)  
-*Account owner: aws-pulumi-ce-052848974346 + aws-pulumi-ce-workshops-420942475186*
+#### Mitch Gerdisch (`MitchGerdisch`) — ~2,900 resources to migrate
 
-| Priority | Resource(s) | Why |
-|----------|------------|-----|
-| 🔴 High | `eks-cluster-eksClusterSecurityGroup-40e8730` / VPC `vpc-027cdd4405a2969ef` / subnets (us-west-2) | Core EKS networking not in IaC; supporting active stack |
-| 🔴 High | `lotctl-k8s-aws-pr-frontend` ECR + `lotctl-bucket-9ce02ad` S3 | Active project with Pulumi stacks (`lotctl-k8s-aws`) — cloud resources should be imported |
-| 🔴 High | `app-repo-9e2b91f` ECR + `secGroup-12befae` SG (us-west-2) | Supporting infra for active workload, no stack reference found |
-| 🟡 Medium | `nelsonselfhost-instanceRole-886944a-*` / `jconnell-dev-*` EKS roles | EKS node/cluster IAM roles without IaC backing |
-| 🟡 Medium | `pulumi-policypacks-a115aaf` S3 (ca-central-1) | Policy packs bucket — should be in IaC to prevent accidental deletion |
-| +3,291 more | Subnets, route tables, VPCs, Lambda layers, API GW resources across 21 regions | Group by service domain; tackle EKS + networking first |
+Owns `aws-pulumi-ce-052848974346` (bulk), `aws-pulumi-ce-workshops-420942475186`, and `google-pulum-ce-team-438338752289`.
 
----
-
-**Azure CE Team** (~208 resources needing migration)  
-*Account: azure-team-ce-subscription; no single owner — mixed CE member resources*
-
-| Priority | Resource(s) | Why |
-|----------|------------|-----|
-| 🔴 High | `rg-shared-services-dev` → `kv-demo-plat-dev` (KV) + `log-demo-platform-dev` (Log Analytics) | Shared platform services consumed by other resources; critical to not lose |
-| 🔴 High | `rg-dbw-my-team-*` / `rg-dbw-team-alpha-*` Databricks workspaces + VNets + NSGs (5 workspaces) | Active Databricks environments for multiple CE members (wladi, my-team variants, team-alpha) |
-| 🔴 High | `podinfo-webapp-rg` (CosmosDB `podinfo-cosmosdb-28525` + WebApp + App Service Plan) | Running web application — active infra |
-| 🟡 Medium | `rg-hub-network-dev` (hub VNet + VPN gateway + NVA VM) | Hub-and-spoke network used by spoke workloads |
-| 🟡 Medium | `rg-sentinel-pulumi-test` (Log Analytics workspace + DCE) | Active security/monitoring workspace |
-| +203 more | Storage accounts, NSGs, identity resources | Group by resource group owner prefix |
+| Resource | Account/Region | Why it matters |
+|----------|---------------|----------------|
+| EKS cluster + VPC networking, us-west-2 | aws-pulumi-ce | 43 resources already managed — expand `shared-dev-eks` project to cover remaining ec2/network infra in the same VPC |
+| S3 buckets + access blocks (~26 us-east-1, ~33 us-west-2) | aws-pulumi-ce | Active demo buckets with high reuse across demos |
+| `workshops.pulumi-ce.team` Route53 zone + records | aws-neo-eu-west-2 | Shared workshop DNS — critical, high blast radius if misconfigured |
+| Lambda `lambda-for-account-cleanup` + IAM | aws-neo-eu-west-2 | Operational automation script; belongs in IaC |
+| 36 CloudFormation stacks | aws-pulumi-ce (multi-region) | `example-cluster-*`, `argo-example-*`, `demo-ecs-lt-*`, `megan-cluster`, `pulumi-selfhosted-01-*`, etc. — migrate or destroy |
+| GCP: 90 custom subnetworks, 33 buckets, 11 backend services | gcp account | Main GCP migration opportunity; group by project (`mitchselfhosted`, `my-demo-network`, `zendesk-domestic`) |
 
 ---
 
-**GCP CE Team** (~324 resources needing migration)  
-*Account: google-pulum-ce-team-438338752289; no single owner*
+#### Robert Smith (`rsmith-pulumi-corp`) — 29 resources to migrate (`aws-neo-eu-west-2`)
 
-| Priority | Resource(s) | Why |
-|----------|------------|-----|
-| 🔴 High | `my-demo-network` VPC + subnets across 30+ regions | Custom network used by compute workloads; should be in IaC to prevent accidental deletion |
-| 🔴 High | `aureq-pulumi-diy-state-storage` + `menfin-demo-diy-state-storage-bucket-36159f1` | **Pulumi state storage buckets** — losing these breaks stacks; must be in IaC immediately |
-| 🔴 High | `mitchselfhosted-mitchsh-network-afa8380` + `mitch-selfhosted` bucket | Self-hosted Pulumi network & storage infra (active) |
-| 🟡 Medium | `httpbin-neg-80c56a5`, `echo-backend-d332380`, `backend-alpha-9c55528` backend services | Active load-balanced services with no IaC backing |
-| 🟡 Medium | `projects/pulumi-ce-team/datasets/dwcore_dev_dataset_1` BigQuery | Active data warehouse dataset |
-| +319 more | Service accounts, WIF pools, storage IAM policies, Cloud DNS records | Group by resource owner name prefix |
+| Resource | Type | Recommended action |
+|----------|------|--------------------|
+| `workshops.pulumi-ce.team` zone + NS + SOA records | Route53 | High priority — import into workshop-infra Pulumi project |
+| `workshop-instructor-role` + `AdminWorkshop` role | IAM Roles | Import into workshop-infra project |
+| `ContinuousDeliveryAdminRole` | IAM Role | Import or confirm still needed |
+| `pulumi-esc-oidc-paul-umi-AdministratorAccess-role` | IAM Role | Import into ESC access project |
+| KMS key `be144c85` + 2 budgets | KMS / Budgets | Import into account-baseline project |
+| Bedrock harness role (`AmazonBedrockAgentCoreHarnessDefaultServiceRole`) + policy | IAM | Import if actively used; delete if one-off test |
 
 ---
 
-**Robert Smith** (~52 resources needing migration)  
-*Account owner: aws-neo-eu-west-2-420942475186*
+#### CE individuals — ~60 resources (spread across GCP and Azure accounts)
 
-| Priority | Resource(s) | Why |
-|----------|------------|-----|
-| 🔴 High | `workshops.pulumi-ce.team` Route53 zone + NS + SOA records | Active DNS zone for all workshop participants — critical |
-| 🔴 High | `workshop-instructor-role` (tag `Owner=workshops`) | Active IAM role used to provision workshop participants' accounts |
-| 🟡 Medium | `lambda-role-for-account-cleanup` + policy (tag `Owner=pulumi-build-engineering`) | Active account cleanup automation Lambda |
-| 🟡 Medium | `insights-account-scan` IAM role + 2 policy attachments | Role that Insights uses for scanning — should be in IaC |
-| 🟢 Low | `420942475186-budget-150-e6909b6`, `420942475186-budget-fc8c40b` | Account cost budgets — low risk, good hygiene to have in IaC |
-| +47 more | ESC OIDC roles (zbuchheit-oidc, pulumi-esc-ediri, ContinuousDeliveryAdminRole), KMS keys, X-Ray configs | Audit each OIDC role; import active ones |
+| Owner | Key resources | Count | Action |
+|-------|--------------|------:|--------|
+| **menfin** | `menfin-demo-*` subnetworks, OIDC pools, GCS buckets, secrets | ~25 | Import into personal or shared Pulumi project |
+| **wladi** | `vnet-dbw-*`, `rg-dbw-*`, `nsg-dbw-*` Azure Databricks VNets/NSGs/RGs | ~20 | Import into a `dbw-infra` Pulumi project |
+| **pk / Piers** | `pk-demo-kv` Azure Key Vault, `pk-gitlab-pool-*` GCP WI provider | ~8 | Import into ESC/demo Pulumi project |
+| **mtan** | `pulumi-oidc-mtan` GCP WI pool + SA | ~5 | Import into personal ESC project |
+| **ediri** | `pulumi-esc-ediri` AWS IAM role + 3 policy attachments | 4 | Import into ESC access project |
 
 ---
 
 ### Deletion Candidates
 
-*Recommend human review before deleting any of these. Classification is based on naming heuristics.*
+> Recommend human review before deleting. Grouped by pattern; framed as suggestions only.
 
-| Pattern | Count | Account | Reason |
-|---------|------:|---------|--------|
-| `serverless-comp-NNN-consumer-*` IAM policies | ~700 | aws-pulumi-ce-052848974346/global | Sequential workshop demo artifacts (numbered 100–742+); orphaned IAM policies with no attached principals |
-| `snapshot-*` / `rds-snapshot-*` RDS cluster snapshots | ~30 | aws-pulumi-ce-052848974346 (us-east-2, eu-west-1, ca-central-1, us-west-2) | Old automated/manual snapshots; oldest from 2021 — confirm no active cluster needs them before deleting |
-| `preupgrade-tf-20210305*` RDS snapshot | 1 | aws-pulumi-ce-052848974346/us-east-2 | 5-year-old pre-upgrade snapshot from a 2021 Terraform migration — almost certainly obsolete |
-| CloudFormation stacks (`example-cluster-3-*`, `argo-example-*`) | ~10 | aws-pulumi-ce-052848974346 (us-west-2, us-east-2) | Stale CFN stacks from 2021–2023 demos; should be destroyed or migrated |
-| `this-is-a-test-foobar-4e80c`, `megan-test-backend`, `oidc-test-secret`, `pulumi-sticker-arts-*` | ~8 | aws-pulumi-ce-052848974346 | Explicit test names; no active workload reference found |
-| `workshop528-*` ALB target group + security group | ~8 | aws-pulumi-ce-workshops-420942475186/us-east-2 | Stale workshop run 528 artifacts *(confirm with fresh scan first — data is 13 months old)* |
-| `mitch-assumerole-test*` (S3 bucket + IAM role + policy, 2 accounts) | ~5 | aws-pulumi-ce-052848974346, aws-neo-eu-west-2-420942475186 | Explicit test/experiment name |
-| Generic Azure RGs with hex names (`resourceGroup2dca640c`, `resource_group*`, `resource-group*`, `resourcegroupcd25bd71`) | ~18 | azure-team-ce-subscription | Auto-generated hex-suffix names from demo runs; all sub-resources appear to be demo leftovers |
-| `piers-resourcegroup-12345`, `rs-test`, `neo-test-sqldb`, `reuse-tf-module-test-workspace`, `elisabeth-test` | 5 | azure-team-ce-subscription | Explicit test/scratch RG names |
-| GCP test resources (`piers-test-bucket`, `my-app-secret`, `my-bucket-01f4221`, `my-bucket-628ad18`, `my-bucket-f50a09b`) | ~8 | google-pulum-ce-team-438338752289 | Generic / test-named; confirm not backing an active demo before deleting |
+| Pattern | Exact Count | Account(s) | Reason |
+|---------|------------:|----------|--------|
+| `serverless-comp-NNN-consumer-*` IAM policies | **1,064** | aws-pulumi-ce/global | Orphaned workshop demo artifacts — sequential numbered (up to 742+); no attached principals expected |
+| RDS cluster snapshots | **176** | aws-pulumi-ce (multi-region) | Accumulated automated snapshots from abandoned demo RDS clusters; oldest from 2021. Review retention and configure lifecycle. |
+| CloudFormation stacks (stale) | ~20 of 36 | aws-pulumi-ce (multi-region) | `example-cluster-*`, `argo-example-*`, `demo-ecs-lt-autoscaleg-*`, `pulumi-selfhosted-01-*`, `MyWidgetServiceStack`, `megan-cluster` — demo-era stacks from 2021–2023; migrate or destroy. `CDKToolkit` stacks may be needed for CDK comparison demos. |
+| `mitch-assumerole-test*` (S3 bucket + IAM policy + role + attachments) | 5 | workshops, neo | Explicit test name pattern, unused |
+| `zbuchheit-oidc` role + attachment + `zbuchheit-bucket-*` | 5 | workshops | Personal stale resources; owner absent from recent activity |
+| `this-is-a-test-foobar-4e80c` S3 bucket + 2 siblings | 3 | aws-pulumi-ce/eu-west-1 | Explicit test name |
+| `piers-resourcegroup-12345` Azure RG | 1 | azure | Sequentially numbered test resource |
+| `rs-test`, `jamesneotest433` (x2), `elisabeth-test` Azure RGs + resources | 4 | azure | Explicit test names |
+| `piers-test-bucket` GCP | 1 | gcp | Test name |
 
----
-
-### Unattributed Resources (significant items where ownership could not be resolved)
-
-*These require a human to assign an owner before migration or deletion decisions can be made.*
-
-| Resource | Account | Why Unresolved |
-|----------|---------|---------------|
-| `snqawpscpmsharedacr` Container Registry | azure-team-ce-subscription | Opaque name; no owner prefix or tag; purpose unclear — may be shared ACR for multiple demos |
-| `sentinel-pulumi-test` Log Analytics workspace + DCE | azure-team-ce-subscription | Name suggests test but workspace may be actively ingesting logs |
-| `console-slack-alerts-eu-west-3-01d9c45` S3 + matching EventBridge rules (us-west-2) | aws-pulumi-ce-052848974346 | Monitoring/alerting infra with no owner tag; unclear if still receiving events |
-| `prometheus-role-fd080fd` + inline policy | aws-pulumi-ce-052848974346/global | Prometheus monitoring role; unclear if backing Prometheus deployment still exists |
-| `projects/pulumi-ce-team/datasets/dwcore_dev_dataset_1` BigQuery | google-pulum-ce-team-438338752289 | Data warehouse dataset with no owner tag or identifiable name prefix |
-| `initech-identity-pool` + `initech-access` service account | google-pulum-ce-team-438338752289 | "Initech" appears in WIF pool and SA; may be a demo org — confirm with CE team |
+**Total deletion candidates: ~1,279** (dominated by 1,064 serverless-comp policies)
 
 ---
 
-*All counts are exact where scan data is available; marked ~approximate where based on sample analysis of the first 100 resources from larger accounts. Failed-scan regions (13 sub-accounts) and the stale workshops account contribute an estimated <50 additional resources to the unscanned total.*
+### Unattributed Resources (assign an owner before migrating)
+
+| Resource | Account | Issue |
+|----------|---------|-------|
+| `beacon-platform-v1c098aee5` Azure RG + related | azure | `beacon-platform` pattern doesn't match any known CE naming convention — assign an owner |
+| `initech-identity-pool` GCP WI pool | gcp | "Initech" is a shared CE demo persona; multiple members may have created this — resolve to one owner |
+| `synapse` Azure RG | azure | No context; unknown owner — check Azure RBAC for creator |
+| `vnet-hub-dev` + `workers-*` Azure VNet/NSG | azure | Platform-style names with no owner tag |
+| `pulumi-aca-webapp-*` Azure RG | azure | ACA demo, no individual prefix |
+| ~280 unnamed IAM policies in `aws-pulumi-ce/global` | aws | Auto-generated names beyond the serverless-comp series — require AWS tag inspection to attribute |
+
+> **Tag coverage note:** Resource tags were not available through the Insights search API. Running `aws resourcegroupstaggingapi get-resources`, `az resource list --output table`, and `gcloud asset search-all-resources` would resolve most of the ~280 unattributed AWS global resources and confirm the `beacon-platform` and `synapse` Azure owners.
+
+---
+
+_Report generated by Pulumi Neo. Classification based on resource names, types, and account ownership signals. All counts exact except where marked ~. Percentages may not sum exactly due to rounding. "~" indicates extrapolated values; exact counts are from targeted API queries._
