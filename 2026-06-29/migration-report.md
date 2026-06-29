@@ -94,8 +94,6 @@ Feb 2025 ██░░░░░░░░░░░░░░░░░░  1
 Jan 2025 ██░░░░░░░░░░░░░░░░░░  1
 ```
 
-**Note:** `dmvhm-infrastructure` and `sgi-infrastructure-pulumi` are **not pequod stacks** — they belong to the `veridos` org and appeared in an earlier cross-org API query. They are excluded from this report.
-
 **Activity pattern:** Jun 2026 dominates heavily (12 of 21 stacks updated this month), driven by new demo deployments. Outside of Jun 2026 the org sees only 1–2 stack updates per month — consistent with a small CE org where most work is ephemeral demo creation rather than sustained operations.
 
 **Largest projects by IaC resources (pequod org):**
