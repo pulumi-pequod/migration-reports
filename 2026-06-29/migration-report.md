@@ -15,7 +15,7 @@
 ░░░░░░░░░░░░░░░░░░░░ 0.9%  (53 of 5,946 discovered resources already under Pulumi IaC)
 ```
 
-**Context:** `pequod` is the Pulumi CE (Customer Engineering) team's shared demo and workshop organization. The estate is dominated by hundreds of ad-hoc demo deployments with minimal IaC tracking of discovered resources. Separately, the org maintains **543 active stacks managing ~3,987 IaC resources** — primarily Kubernetes workloads and long-running service demos — but most of those IaC resources live in accounts or resource types not enrolled in Insights, explaining the apparent gap.
+**Context:** `pequod` is the Pulumi CE (Customer Engineering) team's shared demo and workshop organization. The estate is dominated by hundreds of ad-hoc demo deployments with minimal IaC tracking of discovered resources. Separately, the org maintains **21 active stacks managing ~297 IaC resources** across 19 projects — primarily shared EKS/AKS clusters, demo apps, and OIDC/ESC configuration — but most of those IaC resources live in accounts or resource types not enrolled in Insights, explaining the apparent gap.
 
 | Bucket | Count | % of Discovered | % of Migratable Base |
 |--------|------:|----------------:|--------------------:|
@@ -80,44 +80,45 @@ pie title Discovered Resources by Bucket (5,946 total)
 
 ## 3. Momentum
 
-**Active Pulumi footprint:** 543 stacks · 462 projects · ~3,987 IaC-managed resources
+**Active Pulumi footprint (pequod org):** 21 stacks · 19 projects · ~297 IaC-managed resources · 15 stacks with active resources
 
-*Bars below = stacks active (last updated) per month, scaled to Jun 2026 peak (36). Note: API exposes `lastUpdate`, not creation date — these reflect activity, not new-stack counts.*
+*Bars below = stacks active (last updated) per month, scaled to Jun 2026 peak (12). Note: API exposes `lastUpdate`, not creation date — these reflect activity, not new-stack counts. Prior to 2025 the org shows no stack activity in the data, consistent with a recently bootstrapped environment.*
 
 ```
-Jun 2026 ████████████████████ 36  ← busiest month on record
-May 2026 ████████████████░░░░ 30
-Apr 2026 ██████████████░░░░░░ 25
-Mar 2026 ████████████████░░░░ 28
-Feb 2026 █████████░░░░░░░░░░░ 16
-Jan 2026 ████████░░░░░░░░░░░░ 15
-Dec 2025 ███░░░░░░░░░░░░░░░░░  5  ← holiday quiet
-Nov 2025 ████████████████░░░░ 28
-Oct 2025 █████████████░░░░░░░ 24
-Sep 2025 █████░░░░░░░░░░░░░░░  9
-Aug 2025 ████████████░░░░░░░░ 22
-Jul 2025 ██████████░░░░░░░░░░ 18
+Jun 2026 ████████████████████ 12  ← busiest month on record
+Mar 2026 ████░░░░░░░░░░░░░░░░  2
+Apr 2026 ██░░░░░░░░░░░░░░░░░░  1
+May 2026 ██░░░░░░░░░░░░░░░░░░  1
+May 2025 ████░░░░░░░░░░░░░░░░  2
+Feb 2025 ██░░░░░░░░░░░░░░░░░░  1
+Jan 2025 ██░░░░░░░░░░░░░░░░░░  1
 ```
 
-**Accelerating teams:** Q1-Q2 2026 is running ~33% above the H2 2025 average. Broad activity — no team appears stalled (all have stack updates within 90 days).
+**Note:** `dmvhm-infrastructure` and `sgi-infrastructure-pulumi` are **not pequod stacks** — they belong to the `veridos` org and appeared in an earlier cross-org API query. They are excluded from this report.
 
-**Largest projects by IaC resources:**
+**Activity pattern:** Jun 2026 dominates heavily (12 of 21 stacks updated this month), driven by new demo deployments. Outside of Jun 2026 the org sees only 1–2 stack updates per month — consistent with a small CE org where most work is ephemeral demo creation rather than sustained operations.
 
-| Project | Stacks | Total IaC Resources |
-|---------|-------:|--------------------:|
-| dmvhm-infrastructure | 3 (develop + qa + …) | ~1,282 |
-| sgi-infrastructure-pulumi | 1 (testing) | 110 |
-| demo-aws-container-services-py-0629 | 1 (dev) | 38 |
-| demo-app | 1 (dev) | 30 |
-| lotctl-k8s-aws | 2 (dev + pr) | 16 |
+**Largest projects by IaC resources (pequod org):**
 
-Share of footprint active in the last 12 months: **~86%** of stacks have been updated at least once — a young, actively evolving estate.
+| Project | Stack | IaC Resources | Last Updated |
+|---------|-------|--------------|-------------|
+| shared-dev-eks | dev | 88 | Feb 2026 |
+| pequod-user-mgmt | prod | 55 | May 2026 |
+| demo-aws-container-services-py-0629 | dev | 38 | Jun 2026 |
+| demo-app | dev | 30 | Jun 2026 |
+| shared-dev-aks | dev | 17 | Feb 2026 |
+| lotctl-k8s-aws | pr | 16 | Jun 2026 |
+| azure-oidc-env-config | prod | 12 | May 2025 |
+| insights-azure-creds | prod | 9 | Feb 2025 |
+| gcp-oidc-env-config | prod | 9 | May 2025 |
+
+Share of footprint active in the last 12 months: **71%** of stacks (15 of 21) have resources and have been updated at least once.
 
 ---
 
 ## 4. Coverage by Enrolled Account
 
-> **Important:** Insights coverage reflects only enrolled accounts. The 3,987 IaC resources in Pulumi stacks largely live in non-enrolled accounts (Kubernetes clusters, CI/CD infrastructure), explaining why IaC footprint far exceeds the 53 Insights-visible managed resources.
+> **Important:** Insights coverage reflects only enrolled accounts. The 297 IaC resources in pequod stacks largely live in accounts or resource types not enrolled in Insights (shared EKS/AKS clusters, OIDC config, ESC infra), explaining why only 53 are visible as managed in Insights scans.
 
 | Account | Cloud | Pulumi-Managed | Total Discovered | Coverage % | Bar | Last Scan |
 |---------|-------|---------------:|-----------------:|------------|-----|-----------|
@@ -130,7 +131,7 @@ Share of footprint active in the last 12 months: **~86%** of stacks have been up
 
 **⚠️ Stale scan:** `aws-pulumi-ce-workshops-420942475186` has not been scanned in 13+ months. Trigger a fresh scan before acting on its resource data.
 
-**Enrollment gaps:** Enrolling the AWS accounts backing active Kubernetes clusters (e.g., those running `dmvhm-infrastructure` and `k8s-stack-crd` workloads) would dramatically increase visibility for the CE team's largest IaC investments.
+**Enrollment gaps:** Enrolling the AWS account(s) backing `shared-dev-eks` (88 IaC resources) and the Azure account backing `shared-dev-aks` (17 IaC resources) would close most of the gap between the 297 stack-managed resources and the 53 currently visible in Insights.
 
 ---
 
